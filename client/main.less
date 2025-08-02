@@ -1,0 +1,45 @@
+@import (inline) "~@rainbow-me/rainbowkit/styles.css";
+
+.sl-theme-dark {
+  --docs-background-color: var(--sl-color-neutral-0);
+  --docs-border-color: var(--sl-color-neutral-200);
+  --docs-border-width: 1px;
+  --docs-border-radius: var(--sl-border-radius-medium);
+  --docs-content-max-width: 860px;
+  --docs-sidebar-width: 320px;
+  --docs-sidebar-transition-speed: 250ms;
+  --docs-content-toc-max-width: 260px;
+  --docs-content-padding: 2rem;
+  --docs-content-vertical-spacing: 2rem;
+  --docs-search-overlay-background: rgb(0 0 0 / 0.2);
+  --docs-skip-to-main-width: 200px;
+
+  --docs-overlay-color: hsl(0 0% 0% / 66%);
+  --docs-shadow-x-small: 0 1px 2px rgb(0 0 0 / 36%);
+  --docs-shadow-small: 0 1px 2px rgb(0 0 0 / 48%);
+  --docs-shadow-medium: 0 2px 4px rgb(0 0 0 / 48%);
+  --docs-shadow-large: 0 2px 8px rgb(0 0 0 / 48%);
+  --docs-shadow-x-large: 0 4px 16px rgb(0 0 0 / 48%);
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+  line-height: var(--sl-line-height-normal);
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  height: 100%;
+  font: 16px var(--sl-font-sans);
+  font-weight: var(--sl-font-weight-normal);
+  background-color: var(--docs-background-color);
+  line-height: var(--sl-line-height-normal);
+  color: var(--sl-color-neutral-900);
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+}
