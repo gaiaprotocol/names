@@ -33,6 +33,7 @@
   "@types/mersenne-twister": "^1.1.7",
   "@types/react": "^19.1.8",
   "@types/react-dom": "^19.1.6",
+  "@webtaku/h": "^0.0.15",
   "css-loader": "^7.1.2",
   "csv-parse": "^6.0.0",
   "fcm-cloudflare-workers": "^2.0.1",
