@@ -56,7 +56,9 @@ module.exports = {
         process.env.NODE_ENV === 'production'
           ? 'https://api.gaia.cc'
           : 'http://localhost:8080'
-      )
+      ),
+      APP_NAME: JSON.stringify('Gaia Names'),
+      WALLET_CONNECT_PROJECT_ID: JSON.stringify('7579e5430f7800c2b55f2b502312f5d9'),
     })
   ],
   mode: 'development'
