@@ -1,5 +1,6 @@
 import { h } from '@webtaku/h';
 import { head } from './head';
+import { bundle } from './bundle';
 
 function intro() {
   return '<!DOCTYPE html>' + h(
@@ -89,7 +90,7 @@ function intro() {
         )
       ),
 
-      h('script', { src: '/bundle.js' }),
+      bundle,
     )
   );
 }
