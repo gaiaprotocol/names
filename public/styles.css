@@ -51,17 +51,23 @@
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[1].use[1]!./node_modules/less-loader/dist/cjs.js!./client/components/name-search-form.less ***!
   \**************************************************************************************************************************************************************/
 .name-search-form {
+  position: relative;
   width: 100%;
   max-width: 500px;
-  margin: auto;
+  margin: 0 auto;
 }
-.name-search-result-modal {
-  --width: 100%;
-  max-width: 600px;
-}
-.available-name {
+.name-search-result-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 11;
+  background: var(--sl-panel-background-color, #111);
+  border: 1px solid var(--sl-color-neutral-300);
+  border-radius: 8px;
+  margin-top: 0.25rem;
   padding: 1rem;
-  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /*!***************************************************************************************************************************************!*\

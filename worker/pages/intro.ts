@@ -17,7 +17,7 @@ function intro() {
       ),
 
       // Hero Section with Search
-      h('section.relative.z-10.flex.flex-col.items-center.justify-center.text-center.h-[60vh].space-y-6',
+      h('section.relative.flex.flex-col.items-center.justify-center.text-center.h-[60vh].space-y-6',
         h('h1.text-5xl.font-serif.font-bold.text-yellow-400.tracking-wider', 'GAIA NAMES'),
         h('div.name-search-form-container.w-full.max-w-md.px-4'),
         h('p.text-sm.text-gray-500',
@@ -27,7 +27,7 @@ function intro() {
       ),
 
       // Main Sections
-      h('main.relative.z-10.py-16',
+      h('main.relative.py-16',
         h('div.container.mx-auto.px-4.space-y-20',
 
           // Section 1: Intro
