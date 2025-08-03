@@ -53,7 +53,6 @@ module.exports = {
   plugins: [
     new MiniCssExtractPlugin({ filename: 'styles.css' }),
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
       API_BASE_URL: JSON.stringify(
         process.env.NODE_ENV === 'production'
           ? 'https://api.gaia.cc'
