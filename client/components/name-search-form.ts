@@ -1,6 +1,6 @@
 import { createNameSearchResultContent } from '@gaiaprotocol/client-common';
 import { el } from '@webtaku/el';
-import './name-search-form.less';
+import './name-search-form.css';
 
 function createNameSearchForm(): HTMLElement {
   const container = el('div.name-search-form');
