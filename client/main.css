@@ -1,4 +1,6 @@
 @import "@rainbow-me/rainbowkit/styles.css";
+@import "@ionic/core/css/core.css";
+@import "@ionic/core/css/palettes/dark.always.css";
 
 .sl-theme-dark {
   --docs-background-color: var(--sl-color-neutral-0);

@@ -5,10 +5,9 @@ import { footer } from './footer';
 import { head } from './head';
 import { top } from './top';
 
-function renderProfile(
+export function renderProfile(
   nameData: { account: string; name: string },
-  profile: Profile | undefined,
-  opts?: { isOwner?: boolean }
+  profile: Profile | undefined
 ) {
   const gaiaName = nameData.name;
   const handle = gaiaName.replace('.gaia', '');
@@ -24,8 +23,6 @@ function renderProfile(
     })
     : h('div.grid.place-items-center.w-28.h-28.rounded-full.border-2.border-yellow-400.bg-gray-800.text-gray-300.font-semibold', initials);
 
-  const isOwner = !!opts?.isOwner;
-
   return '<!DOCTYPE html>' + h(
     'html.dark', { lang: 'en' },
     head(`${gaiaName} – Gaia Profile`),
@@ -36,14 +33,14 @@ function renderProfile(
       h('main.container.mx-auto.px-4.py-10.flex-1',
         h('div.mx-auto.max-w-2xl.space-y-8',
 
-          // 프로필 카드
+          // Profile card
           h('div.bg-gray-900/70.border.border-white/10.rounded-2xl.p-8',
             h('div.flex.flex-col.items-center.text-center.space-y-4',
               avatarEl,
               h('h1.text-3xl.font-bold.text-yellow-300.tracking-wide', `${display}.gaia`),
               h('p.text-sm.text-gray-400.max-w-prose', bio),
               h('div.flex.items-center.gap-2.text-xs.text-gray-500',
-                h('span', `Account: ${short(nameData.account)}`),
+                h('span', `Address: ${short(nameData.account)}`),
                 h('sl-button#btn-copy-account', { variant: 'text', size: 'small' },
                   h('sl-icon', { name: 'clipboard' }), ' Copy'
                 )
@@ -51,23 +48,20 @@ function renderProfile(
             )
           ),
 
-          // 액션 영역 (JS에서 바인딩)
+          // Actions: only "Share" is visible server-side; owner-only buttons are hidden by default
           h('div.flex.flex-wrap.justify-center.gap-3',
             h('sl-button#btn-share', { variant: 'primary' },
               h('sl-icon', { slot: 'prefix', name: 'share' }), 'Share'
             ),
-            isOwner ? h('sl-button#btn-rename', { variant: 'default' },
-              h('sl-icon', { slot: 'prefix', name: 'pencil' }), '이름 변경'
-            ) : undefined,
-            isOwner ? h('sl-button#btn-edit-profile', { variant: 'default' },
-              h('sl-icon', { slot: 'prefix', name: 'person' }), '프로필 수정'
-            ) : undefined,
-            isOwner ? h('sl-button#btn-delete', { variant: 'danger' },
-              h('sl-icon', { slot: 'prefix', name: 'trash' }), '삭제하기'
-            ) : undefined,
+            h('sl-button#btn-rename.owner-only.hidden', { 'data-owner-only': '1', variant: 'default' },
+              h('sl-icon', { slot: 'prefix', name: 'pencil' }), 'Rename'
+            ),
+            /*h('sl-button#btn-edit-profile.owner-only.hidden', { 'data-owner-only': '1', variant: 'default' },
+              h('sl-icon', { slot: 'prefix', name: 'person' }), 'Edit Profile'
+            ),*/
           ),
 
-          // 알림/토스트 컨테이너(선택)
+          // Error alert (hidden by default)
           h('sl-alert#profile-error', { variant: 'danger', class: 'hidden' },
             h('sl-icon', { slot: 'icon', name: 'exclamation-octagon' }),
             h('strong', 'Error'),
@@ -76,18 +70,15 @@ function renderProfile(
           )
         ),
 
-        // 클라이언트 바인딩을 위한 메타 데이터
+        // Client-side bindings metadata
         h('div#profile-meta', {
           'data-account': nameData.account,
           'data-gaia-name': gaiaName,
-          'data-is-owner': String(isOwner),
         })
       ),
 
       footer,
-      bundle, // 번들에 profile-page.ts가 포함되어야 함
+      bundle
     )
   );
 }
-
-export { renderProfile };

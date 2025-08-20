@@ -16,6 +16,31 @@ export async function fetchGaiaName(name: string): Promise<{ account: string, na
   return await res.json();
 }
 
+export async function fetchMyGaiaName(
+  token: string
+): Promise<{ account: string; name: string }> {
+  if (!token) throw new Error('Missing authorization token.');
+
+  const res = await fetch(`${GAIA_API_BASE_URI}/my-name`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    let message = `Failed to fetch my Gaia name: ${res.status}`;
+    try {
+      const data = await res.json();
+      if (data?.error) message = data.error;
+    } catch { }
+    throw new Error(message);
+  }
+
+  return (await res.json()) as { account: string; name: string };
+}
+
 const BLACKLIST = ['gaia', 'gaiaprotocol', 'gaia_protocol'] as const;
 const MAX_NAME_LENGTH = 100;
 

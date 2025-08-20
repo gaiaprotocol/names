@@ -1,8 +1,10 @@
 import {
-  createAddressAvatar, createRainbowKit, openWalletConnectModal,
+  createAddressAvatar,
+  createRainbowKit,
+  openWalletConnectModal,
   shortenAddress,
   tokenManager,
-  wagmiConfig
+  wagmiConfig,
 } from '@gaiaprotocol/client-common';
 import { disconnect, getAccount, watchAccount } from '@wagmi/core';
 import { el } from '@webtaku/el';
@@ -11,42 +13,128 @@ import { signMessage } from './auth/siwe';
 import { validateToken } from './auth/validate';
 import { showErrorAlert } from './components/alert';
 import { createNameSearchForm } from './components/name-search-form';
+import { fetchMyGaiaName } from './api/gaia-name'; // ✅ 당신 함수 사용
 import './main.css';
+
+// pages
 import './pages/register-name';
 import './pages/profile';
 
 // -----------------------------------------------------------------------------
-// RainbowKit 부트 (모든 페이지 공통)
+// Bootstrap
 // -----------------------------------------------------------------------------
 document.body.appendChild(createRainbowKit());
-
 document.querySelector('.name-search-form-container')?.append(createNameSearchForm());
-
-// 상단 우측 Connect 버튼 컨테이너
 const connectButtonContainer = document.getElementById('connect-button-container')!;
 
 // -----------------------------------------------------------------------------
-// 옵션 / 전역 상태
+// State
 // -----------------------------------------------------------------------------
-/**
- * 연결 직후 자동으로 서명 모달을 띄울지 여부
- * true  : 연결되면 자동으로 모달을 띄워 로그인 유도
- * false : 상단의 [Sign & Continue] 버튼을 유저가 직접 클릭
- */
 const AUTO_PROMPT_ON_CONNECT = false;
 
-let authInitialized = false;                     // validateToken 완료 여부
-let requireSignature = true;                     // 연결 시 서명 요구 여부 (토큰 없으면 true)
-let lastKnownAddress: `0x${string}` | null = null; // UI 표시용 캐시
+let authInitialized = false;
+let requireSignature = true;
+let lastKnownAddress: `0x${string}` | null = null;
+
+// Top-right label: prefer Gaia name if present
+let identityLabel: string | null = null; // e.g., "yj.gaia"
+let identityLoaded = false;
+
+// ── single-flight / debounce guards ───────────────────────────────────────────
+let identityLoadTask: Promise<void> | null = null; // in-flight promise
+let loadedForToken: string | null = null;          // last token that loaded identity
+let loadTimer: number | null = null;               // debounce timer
 
 // -----------------------------------------------------------------------------
-// 내부 헬퍼
+// Token helper
+// -----------------------------------------------------------------------------
+function getAuthToken(): string | null {
+  // @ts-ignore
+  if (typeof tokenManager.getToken === 'function') return tokenManager.getToken();
+  // @ts-ignore
+  if (typeof tokenManager.get === 'function') {
+    // @ts-ignore
+    const rec = tokenManager.get();
+    if (rec?.token) return rec.token as string;
+  }
+  try {
+    const raw = localStorage.getItem('gaia_auth_token');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.token) return parsed.token as string;
+    }
+  } catch { }
+  return null;
+}
+
+// -----------------------------------------------------------------------------
+// Identity loader (single-flight + cache per token)
+// -----------------------------------------------------------------------------
+async function loadMyIdentity(force = false): Promise<void> {
+  // Already signed-out → reset & exit
+  if (!tokenManager.has()) {
+    identityLabel = null;
+    identityLoaded = true;
+    loadedForToken = null;
+    return;
+  }
+
+  const token = getAuthToken();
+  if (!token) {
+    identityLabel = null;
+    identityLoaded = true;
+    loadedForToken = null;
+    return;
+  }
+
+  // If we already loaded for this token and not forced, skip network
+  if (!force && loadedForToken === token) {
+    identityLoaded = true;
+    return;
+  }
+
+  // Coalesce concurrent calls
+  if (identityLoadTask) {
+    await identityLoadTask;
+    return;
+  }
+
+  identityLoaded = false;
+  identityLabel = null;
+
+  identityLoadTask = (async () => {
+    try {
+      const me = await fetchMyGaiaName(token);       // ✅ 한 번만 호출
+      identityLabel = typeof me?.name === 'string' && me.name ? `${me.name.trim()}.gaia` : null;
+    } catch {
+      // 404 등은 이름 없음 → null 유지
+      identityLabel = null;
+    } finally {
+      identityLoaded = true;
+      loadedForToken = token;
+      identityLoadTask = null;
+    }
+  })();
+
+  await identityLoadTask;
+}
+
+// 이벤트 폭주를 한 번으로 모으기
+function scheduleLoadIdentity(force = false) {
+  if (loadTimer !== null) return;
+  loadTimer = window.setTimeout(async () => {
+    loadTimer = null;
+    await loadMyIdentity(force);
+    renderConnect();
+  }, 0);
+}
+
+// -----------------------------------------------------------------------------
+// Helpers
 // -----------------------------------------------------------------------------
 function ensureWalletConnected(): `0x${string}` {
   const account = getAccount(wagmiConfig);
-  if (!account.isConnected || !account.address) {
-    throw new Error('No wallet connected');
-  }
+  if (!account.isConnected || !account.address) throw new Error('No wallet connected');
   return account.address;
 }
 
@@ -59,40 +147,27 @@ async function signAndLogin(): Promise<void> {
   requireSignature = false;
   lastKnownAddress = address;
 
-  // 상단 메뉴 갱신
-  renderConnect();
+  scheduleLoadIdentity(true);
 }
 
 // -----------------------------------------------------------------------------
-// 서명 모달 (Shoelace <sl-dialog> 사용)
+// Sign dialog (Shoelace)
 // -----------------------------------------------------------------------------
-let dialog: any | null = null; // <sl-dialog>
+let dialog: any | null = null;
 let dialogOpen = false;
 
 function buildDialog() {
   if (dialog) return dialog;
 
-  const title = el('div', 'Signature Required', {
-    style: { fontWeight: '600', fontSize: '16px', marginBottom: '8px' }
-  });
-
+  const title = el('div', 'Signature Required', { style: { fontWeight: '600', fontSize: '16px', marginBottom: '8px' } });
   const message = el('p', 'To access Gaia Names, please sign a message with your connected wallet.');
-
   const cancelBtn = el('sl-button', 'Cancel', { variant: 'default' });
   const signBtn = el('sl-button', 'Sign & Continue', { variant: 'primary' });
-
-  const footer = el(
-    'div',
-    cancelBtn,
-    signBtn,
-    { style: { display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' } }
-  );
-
+  const footer = el('div', cancelBtn, signBtn, { style: { display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' } });
   dialog = el('sl-dialog', el('div', title, message, footer), { label: 'Authentication Required' });
 
-  // 사용자 주도 닫힘만 disconnect 처리
   let programmaticHide = false;
-  dialog.addEventListener('sl-request-close', async (ev: any) => {
+  dialog.addEventListener('sl-request-close', (ev: any) => {
     if (programmaticHide) return;
     ev.preventDefault();
     programmaticHide = true;
@@ -102,7 +177,6 @@ function buildDialog() {
   });
 
   cancelBtn.addEventListener('click', () => dialog!.hide());
-
   signBtn.addEventListener('click', async () => {
     (signBtn as any).loading = true;
     try {
@@ -114,7 +188,7 @@ function buildDialog() {
     } catch (err) {
       console.error(err);
       showErrorAlert('Error', err instanceof Error ? err.message : String(err));
-      dialog!.hide(); // 실패 시 cancel과 동일 경로
+      dialog!.hide();
     } finally {
       (signBtn as any).loading = false;
     }
@@ -132,23 +206,20 @@ function openSignDialog() {
 }
 
 // -----------------------------------------------------------------------------
-// 상단 Connect/Account 드롭다운 렌더러
-// 상태 정의
-//  A) 토큰 있음(tokenManager.has() == true) → 계정 드롭다운
-//  B) 토큰 없음 + 지갑 연결됨 → [Sign & Continue] + [Disconnect]
-//  C) 지갑 미연결 → [Connect]
+// Top-right connect / account dropdown
 // -----------------------------------------------------------------------------
 function renderConnect() {
   connectButtonContainer.innerHTML = '';
 
-  // A) 토큰 있음 → 계정 드롭다운
   if (tokenManager.has()) {
     const address =
       getAccount(wagmiConfig).address ??
       (tokenManager.getAddress() as `0x${string}` | null) ??
       lastKnownAddress;
 
-    const label = address ? shortenAddress(address) : 'Account';
+    const label =
+      (identityLoaded && identityLabel) ? identityLabel :
+        (address ? shortenAddress(address) : 'Account');
 
     const btn = el('sl-button', label, { slot: 'trigger', pill: true });
     if (address) {
@@ -160,7 +231,7 @@ function renderConnect() {
 
     const menu = el(
       'sl-menu',
-      el('sl-menu-item', 'Profile', { 'data-action': 'TODO' }),
+      el('sl-menu-item', identityLabel || 'Profile', { 'data-action': 'profile' }),
       el('sl-menu-item', 'Logout', { 'data-action': 'logout' })
     );
 
@@ -172,13 +243,14 @@ function renderConnect() {
         if (action === 'logout') {
           tokenManager.clear();
           await disconnect(wagmiConfig);
-
           requireSignature = true;
           lastKnownAddress = null;
-
+          identityLabel = null;
+          identityLoaded = true;
+          loadedForToken = null;
           renderConnect();
-        } else {
-          //TODO
+        } else if (action === 'profile') {
+          if (identityLabel) window.location.href = `/${identityLabel}`;
         }
       } catch (err) {
         console.error(err);
@@ -190,24 +262,14 @@ function renderConnect() {
     return;
   }
 
-  // B) 토큰 없음 + 지갑 연결됨 → [Sign & Continue] + [Disconnect]
+  // Wallet connected but not signed
   const account = getAccount(wagmiConfig);
   if (account.isConnected) {
-    const wrapper = el('div', {
-      style: { display: 'flex', gap: '8px', alignItems: 'center' }
-    });
+    const wrapper = el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } });
 
     const signBtn = el('sl-button', 'Sign & Continue', {
       variant: 'primary',
-      onclick: () => {
-        (async () => {
-          try { await signAndLogin(); }
-          catch (err) {
-            console.error(err);
-            showErrorAlert('Error', err instanceof Error ? err.message : String(err));
-          }
-        })();
-      }
+      onclick: () => { (async () => { try { await signAndLogin(); } catch (err) { console.error(err); showErrorAlert('Error', err instanceof Error ? err.message : String(err)); } })(); },
     });
 
     const disconnectBtn = el('sl-button', el('sl-icon', { name: 'box-arrow-right' }), {
@@ -215,7 +277,10 @@ function renderConnect() {
       onclick: () => {
         tokenManager.clear();
         disconnect(wagmiConfig);
-      }
+        identityLabel = null;
+        identityLoaded = true;
+        loadedForToken = null;
+      },
     });
 
     wrapper.append(signBtn, disconnectBtn);
@@ -223,33 +288,28 @@ function renderConnect() {
     return;
   }
 
-  // C) 지갑 미연결 → [Connect]
+  // Not connected
   const connectBtn = el('sl-button', 'Connect', {
     variant: 'primary',
-    onclick: () => openWalletConnectModal()
+    onclick: () => openWalletConnectModal(),
   });
   connectButtonContainer.appendChild(connectBtn);
 }
 
-// 최초 렌더
+// First paint
 renderConnect();
 
 // -----------------------------------------------------------------------------
-// 월렛 상태 변화 구독
+// Wallet state watcher (coalesced)
 // -----------------------------------------------------------------------------
 watchAccount(wagmiConfig, {
-  onChange(account) {
-    // 주소 캐시
+  async onChange(account) {
     lastKnownAddress = account.address ?? lastKnownAddress;
-
-    // UI 갱신
-    renderConnect();
 
     if (account.isConnected && account.address && authInitialized && requireSignature) {
       openSignDialog();
     }
 
-    // 연결 직후 자동 서명 모달 (옵션)
     if (
       AUTO_PROMPT_ON_CONNECT &&
       account.isConnected &&
@@ -261,37 +321,66 @@ watchAccount(wagmiConfig, {
       openSignDialog();
     }
 
-    // 연결 끊김 → 모달 닫고 signed-out 알림
-    if (!account.isConnected) {
-      if (dialog?.open) {
-        dialog.hide();
-        dialogOpen = false;
-      }
+    if (account.isConnected && tokenManager.has()) {
+      scheduleLoadIdentity(false); // 🔸 여러 이벤트가 와도 1회로 합침
+    } else {
+      identityLabel = null;
+      identityLoaded = true;
+      loadedForToken = null;
     }
-  }
+
+    renderConnect();
+
+    if (!account.isConnected && dialog?.open) {
+      dialog.hide();
+      dialogOpen = false;
+    }
+  },
 });
 
 // -----------------------------------------------------------------------------
-// 초기 토큰 유효성 검사 → 상태 정합성 맞추기
+// Auth bootstrap
 // -----------------------------------------------------------------------------
 (async function initAuth() {
   try {
     const ok = await validateToken();
     if (ok && tokenManager.has()) {
-      // 서버/클라이언트 토큰 모두 유효
       requireSignature = false;
       lastKnownAddress = (tokenManager.getAddress() as `0x${string}` | null) ?? lastKnownAddress;
     } else {
-      // 토큰 불일치/만료
       tokenManager.clear();
       requireSignature = true;
     }
   } catch {
-    // 네트워크/서버 에러 등
     tokenManager.clear();
     requireSignature = true;
   } finally {
     authInitialized = true;
+    scheduleLoadIdentity(true); // 🔸 초기 한 번
     renderConnect();
   }
 })();
+
+// -----------------------------------------------------------------------------
+// tokenManager events (coalesced)
+// -----------------------------------------------------------------------------
+tokenManager.on?.('signedIn', () => { scheduleLoadIdentity(true); });
+tokenManager.on?.('signedOut', () => {
+  identityLabel = null;
+  identityLoaded = true;
+  loadedForToken = null;
+  renderConnect();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('rename') === '1') {
+    const input = document.querySelector<HTMLInputElement>('sl-input');
+    if (input) {
+      // Shoelace sl-input 내부 실제 input 접근
+      setTimeout(() => {
+        (input.shadowRoot?.querySelector('input') as HTMLInputElement)?.focus();
+      }, 100); // DOM이 완전히 준비된 뒤 포커스
+    }
+  }
+});
