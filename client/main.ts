@@ -13,6 +13,7 @@ import { showErrorAlert } from './components/alert';
 import { createNameSearchForm } from './components/name-search-form';
 import './main.css';
 import './pages/register-name';
+import './pages/profile';
 
 // -----------------------------------------------------------------------------
 // RainbowKit 부트 (모든 페이지 공통)
