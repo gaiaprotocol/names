@@ -1,6 +1,8 @@
 import { h } from '@webtaku/h';
 import { head } from './head';
 import { bundle } from './bundle';
+import { footer } from './footer';
+import { top } from './top';
 
 function intro() {
   return '<!DOCTYPE html>' + h(
@@ -8,14 +10,7 @@ function intro() {
     head('Gaia Names'),
     h(
       'body.bg-gray-950.text-gray-300.sl-theme-dark',
-
-      // Header
-      h('nav.bg-gray-950.shadow-md.border-b.border-gray-800',
-        h('div.container.mx-auto.px-4.py-3.flex.justify-between.items-center',
-          h('a.text-xl.font-semibold.text-white', { href: '/' }, 'Gaia Protocol'),
-          h('a.text-gray-300.hover:text-white.text-sm', { href: 'https://gaiaprotocol.com', target: '_blank' }, 'Visit Website')
-        )
-      ),
+      top,
 
       // Hero Section with Search
       h('section.relative.flex.flex-col.items-center.justify-center.text-center.h-[60vh].space-y-6',
@@ -83,13 +78,7 @@ function intro() {
         )
       ),
 
-      // Footer
-      h('footer.bg-gray-950.border-t.border-gray-800.mt-16',
-        h('div.container.mx-auto.px-4.py-6.text-center.text-gray-500.text-sm',
-          `© ${new Date().getFullYear()} Gaia Protocol. All rights reserved.`
-        )
-      ),
-
+      footer,
       bundle,
     )
   );

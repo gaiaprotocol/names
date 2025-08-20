@@ -13,8 +13,44 @@
 	"observability": {
 		"enabled": true
 	},
+	"kv_namespaces": [
+		{
+			"binding": "SIWE_NONCES",
+			"id": "d2b5e7eb744247eb8c4d556877c4f265",
+			"preview_id": "b779dc1cfda041a5973570a66db1b42d"
+		}
+	],
+	"vars": {
+		"ALLOWED_DOMAIN": "names.gaia.cc",
+		"ALLOWED_URI": "https://names.gaia.cc",
+		"MESSAGE_FOR_WALLET_LOGIN": "Please sign this message to log in to Gaia Names."
+	},
+	"services": [
+		{
+			"binding": "API_WORKER",
+			"service": "api"
+		}
+	],
 	"env": {
 		"development": {
+			"kv_namespaces": [
+				{
+					"binding": "SIWE_NONCES",
+					"id": "d2b5e7eb744247eb8c4d556877c4f265",
+					"preview_id": "b779dc1cfda041a5973570a66db1b42d"
+				}
+			],
+			"vars": {
+				"ALLOWED_DOMAIN": "localhost:8081",
+				"ALLOWED_URI": "http://localhost:8081",
+				"MESSAGE_FOR_WALLET_LOGIN": "Please sign this message to log in to Gaia Names."
+			},
+			"services": [
+				{
+					"binding": "API_WORKER",
+					"service": "api"
+				}
+			]
 		}
 	}
 }

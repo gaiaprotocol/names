@@ -1,4 +1,4 @@
-import { createNameSearchResultContent } from '@gaiaprotocol/client-common';
+import { createNameSearchResultContent } from '@gaiaprotocol/god-mode-client';
 import { el } from '@webtaku/el';
 import './name-search-form.css';
 
