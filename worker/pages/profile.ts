@@ -6,7 +6,7 @@ import { head } from './head';
 import { top } from './top';
 
 function renderProfile(
-  nameData: { account: string; name: string } | undefined,
+  nameData: { account: string; name: string },
   profile: Profile | undefined
 ) {
   return '<!DOCTYPE html>' + h(

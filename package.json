@@ -20,6 +20,7 @@
  },
  "devDependencies": {
   "@cloudflare/vitest-pool-workers": "^0.8.65",
+  "@gaiaprotocol/god-mode-worker": "^0.0.9",
   "@gaiaprotocol/worker-common": "^0.0.20",
   "@shoelace-style/shoelace": "^2.20.1",
   "@tsndr/cloudflare-worker-jwt": "^3.2.0",
