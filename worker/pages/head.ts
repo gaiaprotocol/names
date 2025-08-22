@@ -14,8 +14,7 @@ function head(title: string) {
       rel: 'stylesheet',
       href: 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/dark.css'
     }),
-    h('link', { rel: 'stylesheet', href: 'styles.css' }),
-    h('link', { rel: 'stylesheet', href: 'theme.css' }),
+    h('link', { rel: 'stylesheet', href: '/styles.css' }),
     h('script', {
       type: 'module',
       src: 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js'
