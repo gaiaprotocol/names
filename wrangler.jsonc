@@ -31,6 +31,15 @@
 			"service": "api"
 		}
 	],
+	"rules": [
+		{
+			"type": "Data",
+			"globs": [
+				"**/*.bin",
+				"**/*.png"
+			]
+		}
+	],
 	"env": {
 		"development": {
 			"kv_namespaces": [

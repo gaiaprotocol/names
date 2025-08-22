@@ -45,3 +45,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
 }
+
+@font-face {
+  font-family: 'Trajan Pro';
+  font-style: normal;
+  font-weight: normal;
+  src: url("/fonts/trajan-pro.woff") format("woff");
+}
+
+.font-trojan-pro {
+  margin-top: 4px;
+  font-family: 'Trajan Pro';
+}
