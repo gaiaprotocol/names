@@ -1,4 +1,4 @@
-"use strict";(self.webpackChunknames=self.webpackChunknames||[]).push([[9385],{69385:(e,l,n)=>{n.r(l),n.d(l,{mobileSvg:()=>o});const o=n(12618).JW`<svg fill="none" viewBox="0 0 20 20">
+"use strict";(self.webpackChunknames=self.webpackChunknames||[]).push([[9385],{69385:(e,l,n)=>{n.r(l),n.d(l,{mobileSvg:()=>o});const o=n(86161).JW`<svg fill="none" viewBox="0 0 20 20">
   <path fill="currentColor" d="M10.81 5.81a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z" />
   <path
     fill="currentColor"

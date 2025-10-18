@@ -1,4 +1,4 @@
-"use strict";(self.webpackChunknames=self.webpackChunknames||[]).push([[4230],{94230:(a,l,e)=>{e.r(l),e.d(l,{moreSvg:()=>s});const s=e(12618).JW`<svg fill="none" viewBox="0 0 41 40">
+"use strict";(self.webpackChunknames=self.webpackChunknames||[]).push([[4230],{94230:(a,l,e)=>{e.r(l),e.d(l,{moreSvg:()=>s});const s=e(86161).JW`<svg fill="none" viewBox="0 0 41 40">
   <path
     style="fill: var(--wui-color-fg-100);"
     fill-opacity=".05"

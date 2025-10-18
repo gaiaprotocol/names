@@ -1,4 +1,4 @@
-"use strict";(self.webpackChunknames=self.webpackChunknames||[]).push([[261],{80261:(e,l,n)=>{n.r(l),n.d(l,{bankSvg:()=>s});const s=n(12618).JW`<svg
+"use strict";(self.webpackChunknames=self.webpackChunknames||[]).push([[261],{80261:(e,l,n)=>{n.r(l),n.d(l,{bankSvg:()=>s});const s=n(86161).JW`<svg
   xmlns="http://www.w3.org/2000/svg"
   width="12"
   height="13"
