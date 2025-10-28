@@ -11,8 +11,8 @@
  },
  "dependencies": {
   "@adraffy/ens-normalize": "^1.11.1",
-  "@gaiaprotocol/client-common": "^0.0.11",
-  "@gaiaprotocol/god-mode-client": "^0.0.3",
+  "@gaiaprotocol/client-common": "^0.0.12",
+  "@gaiaprotocol/god-mode-client": "^0.0.4",
   "@webtaku/el": "^0.1.1",
   "color": "^5.0.2",
   "marked": "^16.4.1",
