@@ -8,21 +8,23 @@ const qs = <T extends Element = Element>(sel: string, root: ParentNode | Documen
 const show = (el: Element | null, on = true) => { if (el) el.classList.toggle('hidden', !on); };
 const setText = (el: Element | null, text: string) => { if (el) el.textContent = text; };
 
+// ------------------------------ Error helpers ------------------------------
 function openError(err: unknown) {
   console.error(err);
   const alertEl = qs<any>('sl-alert#error-alert');
   const msg = qs('#error-alert-message');
   if (msg) setText(msg, err instanceof Error ? err.message : String(err));
   if (alertEl) {
-    show(alertEl, false);      // hidden 제거
-    alertEl.open = true;       // 여기서만 open
+    // 보이도록
+    show(alertEl, true);
+    alertEl.open = true; // Shoelace <sl-alert>의 open 트리거
   }
 }
 
 function isNotFoundError(e: unknown) {
   const m = (e instanceof Error ? e.message : String(e)).toLowerCase();
   // fetchGaiaName는 !res.ok이면 throw Error(`Failed to fetch Gaia name: ${status}`)
-  return m.includes('failed to fetch gaia name') && m.includes(': 404');
+  return m.includes('failed to fetch gaia name') && (m.includes(': 404') || m.includes(' 404'));
 }
 
 // tokenManager에서 Bearer 토큰 얻기 (구현에 따라 노출 API가 다를 수 있어 안전하게 캡처)
@@ -48,6 +50,25 @@ function getAuthToken(): string | null {
   return null;
 }
 
+// ------------------------------ UI state helpers ------------------------------
+function resetProgress() {
+  const progressArea = qs('#progress-area');
+  const progress = qs<any>('#progress');
+  const progressLabel = qs('#progress-label');
+  if (progress) progress.value = 0;
+  if (progressLabel) setText(progressLabel, '');
+  show(progressArea, false);
+}
+
+function setProgress(pct: number, label?: string) {
+  const progressArea = qs('#progress-area');
+  const progress = qs<any>('#progress');
+  const progressLabel = qs('#progress-label');
+  if (progress) progress.value = Math.max(0, Math.min(100, pct));
+  if (label && progressLabel) setText(progressLabel, label);
+  show(progressArea, true);
+}
+
 // ------------------------------ Main ------------------------------
 async function load() {
   const card = qs<HTMLElement>('.register-name-view');
@@ -60,8 +81,13 @@ async function load() {
 
   // 초기엔 에러 알럿 감춤 (SSR에서 open 속성 넣지 마세요)
   const alertEl = qs<HTMLElement>('sl-alert#error-alert');
-  show(alertEl, true);
+  show(alertEl, false); // 숨김
   if ((alertEl as any)?.open) (alertEl as any).open = false;
+
+  resetProgress();
+  show(form, false);
+  show(notEligible, false);
+  show(loading, true);
 
   // Back
   qs<HTMLAnchorElement>('a.back', card)?.addEventListener('click', (e) => {
@@ -76,7 +102,8 @@ async function load() {
   }
 
   // 로그인/토큰 확인
-  if (!tokenManager.has()) {
+  // @ts-ignore - 일부 구현에서 has가 없을 수 있음
+  if (typeof tokenManager.has === 'function' ? !tokenManager.has() : !getAuthToken()) {
     show(loading, false);
     // 간단 가드 UI
     const host = document.createElement('div');
@@ -118,15 +145,18 @@ async function load() {
     if (!eligible) {
       show(loading, false);
       show(notEligible, true);
+
       qs('#btn-buy-gaia')?.addEventListener('click', () => {
         const d = document.createElement('sl-dialog') as any;
         d.label = '$GAIA Launch Schedule';
         d.innerHTML = `<div style="white-space:pre-wrap">\$GAIA will be launched in Q1 2025.\nStay tuned for more updates!</div>`;
         document.body.appendChild(d); d.show();
       });
+
       qs('#btn-buy-nft')?.addEventListener('click', () => {
         window.open('https://opensea.io/collection/gaia-protocol-gods', '_blank', 'noopener');
       });
+
       return;
     }
 
@@ -146,25 +176,19 @@ async function load() {
     // 3) 등록 폼 표시
     show(loading, false);
     show(form, true);
+    resetProgress();
 
     const btnCancel = qs<any>('#btn-cancel');
     const btnRegister = qs<any>('#btn-register');
-    const progressArea = qs('#progress-area');
-    const progress = qs<any>('#progress');
-    const progressLabel = qs('#progress-label');
-
-    const setProgress = (pct: number, label?: string) => {
-      if (progress) progress.value = Math.max(0, Math.min(100, pct));
-      if (label && progressLabel) setText(progressLabel, label);
-      show(progressArea, true);
-    };
 
     btnCancel?.addEventListener('click', () => (window.location.href = '/'));
+
     btnRegister?.addEventListener('click', async () => {
       try {
+        if (!btnRegister) return;
         btnRegister.loading = true;
-        setProgress(10, 'Re-checking eligibility…');
 
+        setProgress(10, 'Re-checking eligibility…');
         const stillEligible = await checkGodMode(address);
         if (!stillEligible) throw new Error('You are no longer eligible for God Mode.');
 
@@ -174,18 +198,21 @@ async function load() {
         setProgress(100, 'Done! Redirecting…');
         window.location.replace(`/${username}.gaia`);
       } catch (e) {
+        resetProgress();
         openError(e);
       } finally {
-        btnRegister.loading = false;
+        if (btnRegister) btnRegister.loading = false;
       }
     });
   } catch (e) {
     show(loading, false);
+    resetProgress();
     openError(e);
   }
 }
 
 // 최초 로드 & 세션 변화에 반응
 load();
+// 일부 구현에서 on이 없을 수 있으므로 옵셔널 체이닝
 tokenManager.on?.('signedIn', load);
 tokenManager.on?.('signedOut', load);

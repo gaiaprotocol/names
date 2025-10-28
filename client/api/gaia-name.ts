@@ -1,3 +1,4 @@
+import { ens_normalize } from '@adraffy/ens-normalize';
 
 declare const GAIA_API_BASE_URI: string;
 
@@ -44,30 +45,42 @@ export async function fetchMyGaiaName(
 const BLACKLIST = ['gaia', 'gaiaprotocol', 'gaia_protocol'] as const;
 const MAX_NAME_LENGTH = 100;
 
-function isValidNameLocal(name: string): boolean {
-  if (!name) return false;
-  if (!/^[a-z0-9-]+$/.test(name)) return false;
-  if (name.startsWith('-') || name.endsWith('-')) return false;
-  if (name.includes('--')) return false;
-  // NFC 정규화 동일성 체크
-  if (name !== name.normalize('NFC')) return false;
-  return true;
+/** ENS 규격으로 유효 여부만 확인 (정규화 가능하면 true) */
+export function isValidENSName(name: string): boolean {
+  try {
+    ens_normalize(name); // 정규화 시도. 불가하면 에러 throw
+    return true;         // ENS 기준 “정상화 가능 = 유효”
+  } catch {
+    return false;
+  }
+}
+
+/** 입력이 이미 정규화된 형태인지까지 강제하고 싶다면 */
+export function isNormalizedENSName(name: string): boolean {
+  try {
+    return ens_normalize(name) === name;
+  } catch {
+    return false;
+  }
 }
 
 export type SaveGaiaNameResult = { ok: true };
 
 export async function saveGaiaName(nameInput: string, token: string): Promise<SaveGaiaNameResult> {
-  const name = nameInput.toLowerCase().trim();
+  let name = nameInput.toLowerCase().trim();
 
   // 로컬 검증 (서버와 동일한 정책을 미리 적용)
   if (!name) {
     throw new Error('Name is required.');
   }
+
+  if (!isValidENSName(name)) {
+    throw new Error('The provided name contains invalid characters or format.');
+  }
+  name = ens_normalize(name);
+
   if (name.length > MAX_NAME_LENGTH) {
     throw new Error(`The provided name exceeds the maximum length of ${MAX_NAME_LENGTH} characters.`);
-  }
-  if (!isValidNameLocal(name)) {
-    throw new Error('The provided name contains invalid characters or format.');
   }
   if (BLACKLIST.includes(name as (typeof BLACKLIST)[number])) {
     throw new Error(`The name "${name}" is reserved and cannot be used.`);
