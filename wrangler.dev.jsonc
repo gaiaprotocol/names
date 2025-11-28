@@ -4,7 +4,7 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-07-12",
 	"assets": {
-		"directory": "./public",
+		"directory": "./public-dev",
 		"not_found_handling": "single-page-application",
 		"run_worker_first": [
 			"/api/*"
@@ -21,8 +21,8 @@
 		}
 	],
 	"vars": {
-		"ALLOWED_DOMAIN": "names.gaia.cc",
-		"ALLOWED_URI": "https://names.gaia.cc",
+		"ALLOWED_DOMAIN": "localhost:8081",
+		"ALLOWED_URI": "http://localhost:8081",
 		"MESSAGE_FOR_WALLET_LOGIN": "Please sign this message to log in to Gaia Names."
 	},
 	"services": [
